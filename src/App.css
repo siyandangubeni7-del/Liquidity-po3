@@ -8,6 +8,8 @@
   gap: 20px;
 }
 
+.header svg { filter: drop-shadow(0 0 6px rgba(0,212,255,0.5)); }
+
 .header {
   display: flex;
   align-items: center;
@@ -32,6 +34,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--text);
+  text-shadow: 0 0 14px rgba(0,212,255,0.35);
 }
 
 .main {
@@ -41,7 +44,8 @@
 }
 
 .dropzone {
-  border: 1px dashed var(--border);
+  border: 1.5px dashed var(--accent);
+  box-shadow: var(--glow-accent);
   border-radius: 14px;
   min-height: 180px;
   display: flex;
@@ -50,16 +54,16 @@
   cursor: pointer;
   background: var(--surface);
   overflow: hidden;
-  transition: border-color 0.15s ease;
+  transition: box-shadow 0.15s ease;
 }
-.dropzone:hover { border-color: var(--accent-dim); }
+.dropzone:hover { box-shadow: 0 0 8px rgba(0,212,255,0.7), 0 0 30px rgba(0,212,255,0.45), 0 0 60px rgba(0,212,255,0.22); }
 
 .dropzone-empty {
   text-align: center;
   color: var(--text-muted);
   padding: 24px;
 }
-.dz-icon { font-size: 28px; color: var(--accent); margin-bottom: 8px; }
+.dz-icon { font-size: 28px; color: var(--accent); margin-bottom: 8px; text-shadow: 0 0 10px rgba(0,212,255,0.6); }
 .dropzone-empty p { margin: 4px 0; font-size: 13px; }
 .dz-sub { color: var(--text-faint); font-size: 11px; }
 
@@ -71,9 +75,10 @@
 }
 
 .scan-btn {
-  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
-  color: #04120c;
-  border: none;
+  background: #ffffff;
+  color: var(--accent-dim);
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--glow-accent);
   border-radius: 999px;
   padding: 15px 20px;
   font-family: var(--font-display);
@@ -81,16 +86,23 @@
   font-size: 14px;
   letter-spacing: 0.08em;
   cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+.scan-btn:hover:not(:disabled) {
+  box-shadow: 0 0 8px rgba(0,212,255,0.7), 0 0 30px rgba(0,212,255,0.45), 0 0 60px rgba(0,212,255,0.22);
 }
 .scan-btn:disabled {
   background: var(--surface-2);
   color: var(--text-faint);
+  border-color: var(--border);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .error-banner {
-  background: rgba(255,107,107,0.08);
-  border: 1px solid rgba(255,107,107,0.35);
+  background: #fff5f8;
+  border: 1px solid var(--accent-sell);
+  box-shadow: var(--glow-sell);
   color: var(--accent-sell);
   border-radius: 10px;
   padding: 12px 14px;
@@ -102,6 +114,7 @@
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   padding: 16px;
+  box-shadow: 0 8px 30px rgba(15,23,32,0.06);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -119,15 +132,16 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  opacity: 0.45;
+  opacity: 0.5;
 }
 .phase-seg.active {
   opacity: 1;
-  border-color: var(--accent-dim);
-  background: rgba(52,230,168,0.06);
+  border-color: var(--accent);
+  background: #f0fcff;
+  box-shadow: var(--glow-accent);
 }
 .phase-num { font-size: 10px; color: var(--text-faint); }
-.phase-seg.active .phase-num { color: var(--accent); }
+.phase-seg.active .phase-num { color: var(--accent-dim); }
 .phase-label { font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
 
 .verdict {
@@ -140,8 +154,8 @@
   border-radius: 10px;
   border: 1px solid var(--border);
 }
-.verdict.pass { color: var(--accent); border-color: var(--accent-dim); background: rgba(52,230,168,0.05); }
-.verdict.flag { color: var(--accent-warn); border-color: rgba(245,185,66,0.35); background: rgba(245,185,66,0.05); }
+.verdict.pass { color: var(--accent-dim); border-color: var(--accent); background: #f0fcff; box-shadow: var(--glow-accent); }
+.verdict.flag { color: #b36a00; border-color: var(--accent-warn); background: #fff8ec; box-shadow: var(--glow-warn); }
 .verdict-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
 .direction-row {
@@ -154,8 +168,8 @@
   font-size: 28px;
   font-weight: 700;
 }
-.direction.buy { color: var(--accent); }
-.direction.sell { color: var(--accent-sell); }
+.direction.buy { color: var(--accent-dim); text-shadow: 0 0 16px rgba(0,212,255,0.45); }
+.direction.sell { color: var(--accent-sell); text-shadow: 0 0 16px rgba(255,46,126,0.4); }
 .confidence { text-align: right; display: flex; flex-direction: column; gap: 2px; }
 .conf-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; }
 .conf-val { font-size: 20px; font-weight: 600; }
@@ -172,10 +186,12 @@
   top: 12px;
   right: 12px;
   font-size: 11px;
-  color: var(--accent);
-  border: 1px solid var(--accent-dim);
+  color: var(--accent-dim);
+  border: 1px solid var(--accent);
+  box-shadow: var(--glow-accent);
   border-radius: 999px;
   padding: 2px 8px;
+  background: #ffffff;
 }
 
 .liq-bar-wrap { display: flex; flex-direction: column; gap: 6px; }
@@ -193,9 +209,10 @@
   overflow: hidden;
   display: flex;
   background: var(--surface-2);
+  border: 1px solid var(--border);
 }
-.liq-seg.risk { background: rgba(255,107,107,0.55); }
-.liq-seg.reward { background: rgba(52,230,168,0.6); }
+.liq-seg.risk { background: rgba(255,46,126,0.5); box-shadow: inset 0 0 8px rgba(255,46,126,0.4); }
+.liq-seg.reward { background: rgba(0,212,255,0.5); box-shadow: inset 0 0 8px rgba(0,212,255,0.4); }
 .liq-marker {
   position: absolute;
   top: -3px;
