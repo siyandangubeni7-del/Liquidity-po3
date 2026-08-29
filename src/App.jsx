@@ -10,6 +10,31 @@ const PO3_PHASES = [
 const PREFERRED_KILLZONES = new Set(['london', 'nyam']);
 const HISTORY_KEY = 'liquidity-po3-history';
 const HISTORY_LIMIT = 200;
+const THEME_KEY = 'liquidity-po3-accent';
+
+const THEMES = [
+  { id: 'cyan', accent: '#00d4ff', dim: '#00a8cc' },
+  { id: 'violet', accent: '#8b5cf6', dim: '#6d3fd1' },
+  { id: 'magenta', accent: '#ff2e9a', dim: '#d1187a' },
+  { id: 'emerald', accent: '#00ffb2', dim: '#00cc8e' },
+  { id: 'amber', accent: '#ffb300', dim: '#cc8f00' },
+  { id: 'ice', accent: '#7dd3fc', dim: '#38bdf8' },
+];
+
+function hexToRgbString(hex) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.style.setProperty('--accent', theme.accent);
+  root.style.setProperty('--accent-dim', theme.dim);
+  root.style.setProperty('--accent-rgb', hexToRgbString(theme.accent));
+}
 
 function normalizeKillzone(kz = '') {
   return kz.toLowerCase().replace(/[\s_-]/g, '');
@@ -106,6 +131,23 @@ function LiquidityBar({ entry, stopLoss, takeProfit, direction }) {
         <span className="entry-val">{e.toFixed(2)} entry</span>
         <span>{tp.toFixed(2)}</span>
       </div>
+    </div>
+  );
+}
+
+function ThemeSwitcher({ current, onSelect }) {
+  return (
+    <div className="theme-row">
+      <span className="theme-label">COLOR</span>
+      {THEMES.map((t) => (
+        <button
+          key={t.id}
+          className={`swatch ${current === t.id ? 'active' : ''}`}
+          style={{ background: t.accent }}
+          onClick={() => onSelect(t)}
+          aria-label={`${t.id} theme`}
+        />
+      ))}
     </div>
   );
 }
@@ -260,11 +302,22 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  const [themeId, setThemeId] = useState('cyan');
   const inputRef = useRef(null);
 
   useEffect(() => {
     setHistory(loadHistory());
+    const savedId = localStorage.getItem(THEME_KEY);
+    const found = THEMES.find((t) => t.id === savedId) || THEMES[0];
+    setThemeId(found.id);
+    applyTheme(found);
   }, []);
+
+  const selectTheme = (theme) => {
+    setThemeId(theme.id);
+    applyTheme(theme);
+    try { localStorage.setItem(THEME_KEY, theme.id); } catch {}
+  };
 
   const handleFile = useCallback((f) => {
     if (!f) return;
@@ -356,6 +409,8 @@ export default function App() {
         </div>
         <SweepMark />
       </header>
+
+      <ThemeSwitcher current={themeId} onSelect={selectTheme} />
 
       <div className="tabs">
         <button className={`tab-btn ${tab === 'scan' ? 'active' : ''}`} onClick={() => setTab('scan')}>SCAN</button>
