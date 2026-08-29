@@ -152,6 +152,74 @@ function ThemeSwitcher({ current, onSelect }) {
   );
 }
 
+const SESSIONS = [
+  { key: 'asia', label: 'Asian', start: 0, end: 7 },
+  { key: 'london', label: 'London Killzone', start: 7, end: 12 },
+  { key: 'nyam', label: 'NY AM Killzone', start: 12, end: 15 },
+  { key: 'nylunch', label: 'NY Lunch', start: 15, end: 17 },
+  { key: 'nypm', label: 'NY PM', start: 17, end: 20 },
+  { key: 'latenyc', label: 'Late NY', start: 20, end: 24 },
+];
+
+function getUtcHourDecimal(date) {
+  return date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+}
+
+function minutesUntil(currentHour, targetHour) {
+  let diff = targetHour - currentHour;
+  if (diff <= 0) diff += 24;
+  return Math.round(diff * 60);
+}
+
+function formatMinutes(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+}
+
+function getKillzoneStatus(date) {
+  const hour = getUtcHourDecimal(date);
+  const current = SESSIONS.find((s) => hour >= s.start && hour < s.end) || SESSIONS[SESSIONS.length - 1];
+  const isPreferred = PREFERRED_KILLZONES.has(current.key);
+
+  if (isPreferred) {
+    const minsLeft = minutesUntil(hour, current.end === 24 ? 0 : current.end);
+    return { current, isPreferred: true, message: `Ends in ${formatMinutes(minsLeft)}` };
+  }
+
+  const londonStart = minutesUntil(hour, 7);
+  const nyStart = minutesUntil(hour, 12);
+  const next = londonStart <= nyStart ? { label: 'London', mins: londonStart } : { label: 'NY AM', mins: nyStart };
+  return { current, isPreferred: false, message: `${next.label} opens in ${formatMinutes(next.mins)}` };
+}
+
+function KillzoneClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const status = getKillzoneStatus(now);
+  const utcLabel = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  const localLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div className={`clock-card ${status.isPreferred ? 'pass' : 'flag'}`}>
+      <div className="clock-top">
+        <span className="verdict-dot" />
+        <span className="clock-session">{status.current.label}</span>
+      </div>
+      <div className="clock-times">
+        <span>{localLabel} local</span>
+        <span className="clock-sep">·</span>
+        <span>{utcLabel} UTC</span>
+      </div>
+      <div className="clock-msg">{status.message}</div>
+    </div>
+  );
+}
+
 function DataCell({ label, value }) {
   return (
     <div className="cell">
@@ -421,6 +489,7 @@ export default function App() {
 
       {tab === 'scan' ? (
         <main className="main">
+          <KillzoneClock />
           <section
             className="dropzone"
             onDragOver={(e) => e.preventDefault()}

@@ -451,6 +451,43 @@
 .outcome-btn.sl.active { color: var(--accent-sell); border-color: rgba(var(--accent-sell-rgb),0.6); box-shadow: var(--glow-sell); }
 .outcome-btn.del { color: var(--text-faint); flex: 0.6; }
 
+.clock-card {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.clock-card.pass { border-color: rgba(var(--accent-rgb),0.5); box-shadow: var(--glow-accent); }
+.clock-card.flag { border-color: rgba(var(--accent-warn-rgb),0.5); box-shadow: var(--glow-warn); }
+.clock-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.clock-card.pass .clock-top { color: var(--accent); }
+.clock-card.flag .clock-top { color: var(--accent-warn); }
+.clock-session {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.clock-times {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.clock-sep { margin: 0 4px; color: var(--text-faint); }
+.clock-msg {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+
 .clear-btn {
   background: none;
   border: none;
