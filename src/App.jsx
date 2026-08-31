@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import './App.css';
+import './Landing.css';
+import Landing from './Landing.jsx';
 
 const PO3_PHASES = [
   { key: 'accumulation', label: 'Accumulation' },
@@ -363,6 +365,7 @@ function HistoryView({ entries, onSetOutcome, onDelete, onClear }) {
 }
 
 export default function App() {
+  const [view, setView] = useState('landing');
   const [tab, setTab] = useState('scan');
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -468,13 +471,17 @@ export default function App() {
     saveHistory([]);
   };
 
+  if (view === 'landing') {
+    return <Landing onEnter={() => setView('app')} />;
+  }
+
   return (
     <div className="page">
       <header className="header">
-        <div className="wordmark">
+        <button className="wordmark wordmark-btn" onClick={() => setView('landing')} aria-label="Back to home">
           <span className="w-top">LIQUIDITY</span>
           <span className="w-bottom">PO3</span>
-        </div>
+        </button>
         <SweepMark />
       </header>
 

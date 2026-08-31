@@ -17,6 +17,13 @@
   padding-top: 8px;
 }
 
+.wordmark-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
 .wordmark {
   display: flex;
   flex-direction: column;
@@ -463,14 +470,14 @@
   gap: 4px;
 }
 .clock-card.pass { border-color: rgba(var(--accent-rgb),0.5); box-shadow: var(--glow-accent); }
-.clock-card.flag { border-color: rgba(var(--accent-warn-rgb),0.5); box-shadow: var(--glow-warn); }
+.clock-card.flag { border-color: rgba(var(--accent-rgb),0.18); box-shadow: none; }
 .clock-top {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .clock-card.pass .clock-top { color: var(--accent); }
-.clock-card.flag .clock-top { color: var(--accent-warn); }
+.clock-card.flag .clock-top { color: var(--text-muted); }
 .clock-session {
   font-family: var(--font-display);
   font-size: 13px;
