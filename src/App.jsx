@@ -13,6 +13,14 @@ const PREFERRED_KILLZONES = new Set(['london', 'nyam']);
 const HISTORY_KEY = 'liquidity-po3-history';
 const HISTORY_LIMIT = 200;
 const THEME_KEY = 'liquidity-po3-accent';
+const NEUTRAL_CONFIDENCE_THRESHOLD = 45;
+
+function isNeutralResult(result) {
+  const dir = (result?.direction || '').toLowerCase();
+  if (dir === 'neutral') return true;
+  const conf = Number(result?.confidence);
+  return Number.isFinite(conf) && conf < NEUTRAL_CONFIDENCE_THRESHOLD;
+}
 
 const THEMES = [
   { id: 'cyan', accent: '#00d4ff', dim: '#00a8cc' },
@@ -232,24 +240,33 @@ function DataCell({ label, value }) {
 }
 
 function ResultCard({ result }) {
-  const filter = evaluateFilter(result);
+  const isNeutral = isNeutralResult(result);
   const isBuy = (result.direction || '').toLowerCase().includes('buy');
+  const filter = isNeutral ? null : evaluateFilter(result);
+
   return (
     <section className="result-card">
       <Phase3Strip current={result.po3Phase} />
 
-      <div className={`verdict ${filter.pass ? 'pass' : 'flag'}`}>
-        <span className="verdict-dot" />
-        {filter.pass ? (
-          <span>PASSES RISK FILTER — ≥1:2 R:R, preferred killzone</span>
-        ) : (
-          <span>FLAGGED — {filter.reasons.join('; ')}</span>
-        )}
-      </div>
+      {isNeutral ? (
+        <div className="verdict wait">
+          <span className="verdict-dot" />
+          <span>WAIT — NO TRADE — structure not confirmed yet</span>
+        </div>
+      ) : (
+        <div className={`verdict ${filter.pass ? 'pass' : 'flag'}`}>
+          <span className="verdict-dot" />
+          {filter.pass ? (
+            <span>PASSES RISK FILTER — ≥1:2 R:R, preferred killzone</span>
+          ) : (
+            <span>FLAGGED — {filter.reasons.join('; ')}</span>
+          )}
+        </div>
+      )}
 
       <div className="direction-row">
-        <div className={`direction ${isBuy ? 'buy' : 'sell'}`}>
-          {isBuy ? '↗' : '↘'} {(result.direction || '—').toUpperCase()}
+        <div className={`direction ${isNeutral ? 'neutral' : isBuy ? 'buy' : 'sell'}`}>
+          {isNeutral ? '−' : isBuy ? '↗' : '↘'} {isNeutral ? 'NEUTRAL' : (result.direction || '—').toUpperCase()}
         </div>
         <div className="confidence">
           <span className="conf-label">CONFIDENCE</span>
@@ -263,12 +280,14 @@ function ResultCard({ result }) {
         {result.grade && <div className="grade-pill">{result.grade}</div>}
       </div>
 
-      <LiquidityBar
-        entry={result.entry}
-        stopLoss={result.stopLoss}
-        takeProfit={result.takeProfit}
-        direction={result.direction}
-      />
+      {!isNeutral && (
+        <LiquidityBar
+          entry={result.entry}
+          stopLoss={result.stopLoss}
+          takeProfit={result.takeProfit}
+          direction={result.direction}
+        />
+      )}
 
       <div className="grid">
         <DataCell label="PAIR" value={result.pair} />
@@ -288,13 +307,21 @@ function ResultCard({ result }) {
           <div className="trigger-text">{result.nextTrigger}</div>
         </div>
       )}
+
+      {result.invalidation && (
+        <div className="trigger-box invalidation-box">
+          <div className="cell-label">INVALIDATION</div>
+          <div className="trigger-text">{result.invalidation}</div>
+        </div>
+      )}
     </section>
   );
 }
 
 function HistoryView({ entries, onSetOutcome, onDelete, onClear }) {
   const total = entries.length;
-  const passCount = entries.filter((e) => e.pass).length;
+  const actionable = entries.filter((e) => e.direction !== 'neutral');
+  const passCount = actionable.filter((e) => e.pass).length;
   const decided = entries.filter((e) => e.outcome === 'tp' || e.outcome === 'sl');
   const wins = decided.filter((e) => e.outcome === 'tp').length;
   const winRate = decided.length ? Math.round((wins / decided.length) * 100) : null;
@@ -317,7 +344,7 @@ function HistoryView({ entries, onSetOutcome, onDelete, onClear }) {
         </div>
         <div className="stat-card">
           <div className="cell-label">PASSED FILTER</div>
-          <div className="stat-val">{Math.round((passCount / total) * 100)}%</div>
+          <div className="stat-val">{actionable.length ? `${Math.round((passCount / actionable.length) * 100)}%` : '—'}</div>
         </div>
         <div className="stat-card">
           <div className="cell-label">WIN RATE</div>
@@ -329,34 +356,47 @@ function HistoryView({ entries, onSetOutcome, onDelete, onClear }) {
       )}
 
       <div className="history-list">
-        {entries.map((e) => (
-          <div key={e.id} className="history-item">
-            <div className="hist-top">
-              <span className={`hist-dir ${e.direction === 'buy' ? 'buy' : 'sell'}`}>
-                {e.direction === 'buy' ? '↗ BUY' : '↘ SELL'}
-              </span>
-              <span className="hist-date">{new Date(e.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        {entries.map((e) => {
+          const isNeutral = e.direction === 'neutral';
+          return (
+            <div key={e.id} className="history-item">
+              <div className="hist-top">
+                <span className={`hist-dir ${isNeutral ? 'neutral' : e.direction === 'buy' ? 'buy' : 'sell'}`}>
+                  {isNeutral ? '− WAIT' : e.direction === 'buy' ? '↗ BUY' : '↘ SELL'}
+                </span>
+                <span className="hist-date">{new Date(e.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div className="hist-mid">
+                <span>{e.pair || 'unknown pair'} · {e.chartTimeframe || '—'}</span>
+                {isNeutral ? (
+                  <span className="hist-badge wait">NO TRADE</span>
+                ) : (
+                  <span className={`hist-badge ${e.pass ? 'pass' : 'flag'}`}>{e.pass ? 'PASS' : 'FLAGGED'}</span>
+                )}
+              </div>
+              <div className="hist-vals">
+                {isNeutral ? 'No entry — structure unconfirmed' : `R:R ${e.riskReward ?? '—'} · Entry ${e.entry ?? '—'} · SL ${e.stopLoss ?? '—'} · TP ${e.takeProfit ?? '—'}`}
+              </div>
+              {!isNeutral ? (
+                <div className="hist-actions">
+                  <button
+                    className={`outcome-btn tp ${e.outcome === 'tp' ? 'active' : ''}`}
+                    onClick={() => onSetOutcome(e.id, e.outcome === 'tp' ? 'pending' : 'tp')}
+                  >TP HIT</button>
+                  <button
+                    className={`outcome-btn sl ${e.outcome === 'sl' ? 'active' : ''}`}
+                    onClick={() => onSetOutcome(e.id, e.outcome === 'sl' ? 'pending' : 'sl')}
+                  >SL HIT</button>
+                  <button className="outcome-btn del" onClick={() => onDelete(e.id)}>DELETE</button>
+                </div>
+              ) : (
+                <div className="hist-actions">
+                  <button className="outcome-btn del" style={{ flex: 1 }} onClick={() => onDelete(e.id)}>DELETE</button>
+                </div>
+              )}
             </div>
-            <div className="hist-mid">
-              <span>{e.pair || 'unknown pair'} · {e.chartTimeframe || '—'}</span>
-              <span className={`hist-badge ${e.pass ? 'pass' : 'flag'}`}>{e.pass ? 'PASS' : 'FLAGGED'}</span>
-            </div>
-            <div className="hist-vals">
-              R:R {e.riskReward ?? '—'} · Entry {e.entry ?? '—'} · SL {e.stopLoss ?? '—'} · TP {e.takeProfit ?? '—'}
-            </div>
-            <div className="hist-actions">
-              <button
-                className={`outcome-btn tp ${e.outcome === 'tp' ? 'active' : ''}`}
-                onClick={() => onSetOutcome(e.id, e.outcome === 'tp' ? 'pending' : 'tp')}
-              >TP HIT</button>
-              <button
-                className={`outcome-btn sl ${e.outcome === 'sl' ? 'active' : ''}`}
-                onClick={() => onSetOutcome(e.id, e.outcome === 'sl' ? 'pending' : 'sl')}
-              >SL HIT</button>
-              <button className="outcome-btn del" onClick={() => onDelete(e.id)}>DELETE</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button className="clear-btn" onClick={onClear}>Clear all history</button>
@@ -422,11 +462,12 @@ export default function App() {
       const data = await res.json();
       setResult(data);
 
-      const filter = evaluateFilter(data);
+      const isNeutral = isNeutralResult(data);
+      const filter = isNeutral ? null : evaluateFilter(data);
       const entry = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         timestamp: Date.now(),
-        direction: (data.direction || '').toLowerCase(),
+        direction: isNeutral ? 'neutral' : (data.direction || '').toLowerCase(),
         pair: data.pair,
         chartTimeframe: data.chartTimeframe,
         riskReward: data.riskReward,
@@ -434,8 +475,8 @@ export default function App() {
         stopLoss: data.stopLoss,
         takeProfit: data.takeProfit,
         killzone: data.killzone,
-        pass: filter.pass,
-        outcome: 'pending',
+        pass: isNeutral ? null : filter.pass,
+        outcome: isNeutral ? 'neutral' : 'pending',
       };
       setHistory((prev) => {
         const next = [entry, ...prev];
